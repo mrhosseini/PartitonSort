@@ -16,9 +16,9 @@ using namespace std;
 int InputReader::dim = 5;
 int InputReader::reps = 1;
 
-unsigned int inline InputReader::atoui(const string& in) {
+int_t inline InputReader::atoui(const string& in) {
 	std::istringstream reader(in);
-	unsigned int val;
+    int_t val;
 	reader >> val;
 	return val;
 }
@@ -38,8 +38,8 @@ std::vector<std::string> InputReader::split(const std::string &s, char delim) {
 	return elems;
 }
 
-vector<vector<unsigned int>> InputReader::ReadPackets(const string& filename) {
-	vector<vector<unsigned int>> packets;
+std::vector<std::vector<int_t> > InputReader::ReadPackets(const string& filename) {
+    vector<vector<int_t>> packets;
 	ifstream input_file(filename);
 	if (!input_file.is_open())
 	{
@@ -53,7 +53,7 @@ vector<vector<unsigned int>> InputReader::ReadPackets(const string& filename) {
 	while (getline(input_file, content)) {
 		istringstream iss(content);
 		vector<string> tokens{ istream_iterator < string > {iss}, istream_iterator < string > {} };
-		vector<unsigned int> one_packet;
+        vector<int_t> one_packet;
 		for (int i = 0; i < dim; i++) {
 			one_packet.push_back(atoui(tokens[i]));
 		}
@@ -64,7 +64,7 @@ vector<vector<unsigned int>> InputReader::ReadPackets(const string& filename) {
 	return packets;
 }
 
-void InputReader::ReadIPRange(std::array<unsigned int,2>& IPrange,  unsigned int& prefix_length, const string& token)
+void InputReader::ReadIPRange(std::array<int_t,2>& IPrange,  unsigned int& prefix_length, const string& token)
 {
 	//cout << token << endl;
 	//split slash
@@ -124,13 +124,13 @@ void InputReader::ReadIPRange(std::array<unsigned int,2>& IPrange,  unsigned int
 	IPrange[FieldDA] <<= 8;
 	IPrange[FieldDA] += ptrange[3];
 }
-void InputReader::ReadPort(std::array<unsigned int,2>& Portrange, const string& from, const string& to)
+void InputReader::ReadPort(std::array<int_t,2>& Portrange, const string& from, const string& to)
 {
 	Portrange[LOW] = atoui(from);
 	Portrange[HIGH] = atoui(to);
 }
 
-void InputReader::ReadProtocol(std::array<unsigned int,2>& Protocol, const string& last_token)
+void InputReader::ReadProtocol(std::array<int_t,2>& Protocol, const string& last_token)
 {
 	// Example : 0x06/0xFF
 	vector<string> split_slash = split(last_token, '/');
@@ -255,13 +255,13 @@ unsigned int PrefixLength(unsigned int low, unsigned int high) {
 	return 32 - lg;
 }
 
-void InputReader::ParseRange(std::array<unsigned int, 2>& range, const string& text) {
+void InputReader::ParseRange(std::array<int_t, 2>& range, const string& text) {
 	vector<string> split_colon = split(text, ':');
 	// to obtain interval
 	range[LOW] = atoui(split_colon[LOW]);
 	range[HIGH] = atoui(split_colon[HIGH]);
 	if (range[LOW] > range[HIGH]) {
-		printf("Problematic range: %u-%u\n", range[LOW], range[HIGH]);
+        printf("Problematic range: %lu-%lu\n", range[LOW], range[HIGH]);
 	}
 }
 
@@ -283,7 +283,7 @@ vector<Rule> InputReader::ReadFilterFileMSU(const string&  filename)
 	int priority = 0;
 	getline(input_file, content);
 	vector<string> parts = split(content, ',');
-	vector<array<unsigned int, 2>> bounds(parts.size());
+    vector<array<int_t, 2>> bounds(parts.size());
 	for (size_t i = 0; i < parts.size(); i++) {
 		ParseRange(bounds[i], parts[i]);
 		//printf("[%u:%u] %d\n", bounds[i][LOW], bounds[i][HIGH], PrefixLength(bounds[i][LOW], bounds[i][HIGH]));
@@ -322,7 +322,149 @@ vector<Rule> InputReader::ReadFilterFileMSU(const string&  filename)
 	cout << endl;
 	}
 	exit(0);*/
-	return rules;
+    return rules;
+}
+
+#define MAC_ADDR_LEN 6
+#define MIN_NG_LINE_LEN 8
+#define NG_NW_SRC      "nw_src"
+#define NG_NW_DST      "nw_dst"
+#define NG_TP_SRC      "tp_src"
+#define NG_TP_DST      "tp_dst"
+#define NG_NW_PROTO    "nw_proto"
+#define NG_DL_SRC      "dl_src"
+#define NG_DL_DST      "dl_dst"
+#define NG_ETH_TYPE    "eth_type"
+#define NG_IN_PORT     "in_port"
+enum SIMPLE_FIELD_NG_INDEX {
+    NGI_NW_SRC = 0,
+    NGI_NW_DST,
+    NGI_TP_SRC,
+    NGI_TP_DST,
+    NGI_NW_PROTO,
+    NGI_DL_SRC,
+    NGI_DL_DST,
+    NGI_ETH_TYPE,
+    NGI_IN_PORT,
+    NGI_FIELD_COUNT
+};
+std::vector<Rule> InputReader::ReadFilterFileClassBenchNg(const string &filename)
+{
+    const char *ng_fieldnames[] = {NG_NW_SRC, NG_NW_DST, NG_TP_SRC, NG_TP_DST, NG_NW_PROTO, NG_DL_SRC, NG_DL_DST, NG_ETH_TYPE, NG_IN_PORT};
+
+    std::map<std::string, uint64_t> ng_max_values = {
+        {NG_NW_SRC, 0xFFFFFFFF},
+        {NG_NW_DST, 0xFFFFFFFF},
+        {NG_TP_SRC, 0xFFFF},
+        {NG_TP_DST, 0xFFFF},
+        {NG_NW_PROTO, 0xFF},
+        {NG_DL_SRC, 0xFFFFFFFFFFFF},
+        {NG_DL_DST, 0xFFFFFFFFFFFF},
+        {NG_ETH_TYPE, 0xFFFF},
+        {NG_IN_PORT, 0xFFFF}
+    };
+
+    vector<Rule> rules;
+    FILE *fp = fopen(filename.c_str(), "r");
+    if (!fp) {
+        perror("RuleSet::readNgFile::fopen");
+        return rules;
+    }
+
+    char line[1000] = {};
+
+    int id = 0;
+    dim = 9;
+    while (fgets(line, 999, fp) != 0) {
+
+        if (strlen(line) < MIN_NG_LINE_LEN || !strchr(line, '=')) {
+            printf("\nInvalid line in file: {%s}", line);
+            continue;
+        }
+        //SimpleRule *rule = new SimpleRule();
+        Rule rule(dim);
+        for (uint32_t i = 0; i < 9; i++) {
+            bool isPrefix = (i <= 1) ? true : false;
+            char *sub = strstr(line, ng_fieldnames[i]);
+            if (sub) {
+                sub += strlen(ng_fieldnames[i]) + 1; // +1 for =
+                ReadNgField(rule, i, isPrefix, ng_fieldnames[i], sub);
+            } else {
+                rule.range[i][LOW] = 0;
+                rule.range[i][HIGH] = ng_max_values[ng_fieldnames[i]];
+            }
+        }
+
+        rule.id = id;
+        id++;
+        rules.push_back(rule);
+    }
+
+    int max_pri = rules.size() - 1;
+    for (size_t i = 0; i < rules.size(); i++) {
+        rules[i].priority = max_pri - i;
+    }
+
+    return rules;
+}
+
+void InputReader::ReadNgField(Rule &rule, int fieldIndex, bool isPrefix, const char *name, const char *fieldstr)
+{
+    //this->type = type;
+    uint64_t first = 0;
+    uint64_t second = 0;
+    //int wildcard = 0;
+    uint8_t addr[MAC_ADDR_LEN];
+    memset(addr, 0, MAC_ADDR_LEN);
+    //this->name = name;
+
+    if (isPrefix) {
+        uint8_t chunks[4];
+        int l = 0;
+        sscanf(fieldstr, "%d.%d.%d.%d/%d", (int *) &chunks[0], (int *) &chunks[1], (int *) &chunks[2], (int *) &chunks[3], &l);
+
+        //memcpy(&this->prefix, chunks, 4);
+        uint8_t *p = (uint8_t*) &first;
+        for (int i = 0; i < 4; i++)
+            p[i] = chunks[3 - i];
+
+        uint32_t msk = 0x80000000;
+        uint32_t mask = 0;
+        for (int i = 0; i < l; i++, msk = msk >> 1) {
+            mask = mask | msk;
+        }
+        rule.range[fieldIndex][LOW] = ((uint32_t) mask) & first;
+        rule.range[fieldIndex][HIGH] = (~ (uint32_t) mask) | first;
+        rule.prefix_length[fieldIndex] = l;
+
+    } else {
+        if (!strncmp(name, "eth_type", std::min(strlen(name), strlen("eth_type")))) {
+            uint64_t value = 0;
+            sscanf(&fieldstr[2], "%lx", &value);
+            first = value;
+            second = value;
+        } else if (!strncmp(name, "dl_src", std::min(strlen(name), strlen("dl_src"))) ||
+                   !strncmp(name, "dl_dst", std::min(strlen(name), strlen("dl_dst")))) {
+            int32_t chunk[MAC_ADDR_LEN] = {};
+            sscanf(fieldstr, "%2x:%2x:%2x:%2x:%2x:%2x", &chunk[0], &chunk[1], &chunk[2], &chunk[3], &chunk[4], &chunk[5]);
+            first = 0;
+            for (int i = 0; i < MAC_ADDR_LEN; i++) {
+                addr[i] = (chunk[i] & 0xFF);
+                if (sizeof(uint64_t) >= 6) {
+                    uint64_t tmp = chunk[i];
+                    first = first | (tmp << (8 * i));
+                }
+                second = first;
+            }
+        } else {
+            uint64_t value = 0;
+            sscanf(fieldstr, "%lu", &value);
+            first = value;
+            second = value;
+        }
+        rule.range[fieldIndex][LOW] = first;
+        rule.range[fieldIndex][HIGH] = second;
+    }
 }
 
 vector<Rule> InputReader::ReadFilterFile(const string&  filename) {
@@ -361,8 +503,9 @@ vector<Rule> InputReader::ReadFilterFile(const string&  filename) {
 	    dim = reps * 5;
 		return ReadFilterFileClassBench(filename);
 	} else {
-		cout << "ERROR: unknown input format please use either MSU format or ClassBench format" << endl;
-		exit(1);
+//		cout << "ERROR: unknown input format please use either MSU format or ClassBench format" << endl;
+//		exit(1);
+        return ReadFilterFileClassBenchNg(filename);
 	}
 	in.close();
 }

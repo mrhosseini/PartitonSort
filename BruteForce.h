@@ -46,7 +46,7 @@ public:
 	void DeleteRule(size_t i) {
 		if (i < 0 || i >= rules.size()) {
 			printf("Warning index delete rule out of bound: do nothing here\n");
-			printf("%d vs. size: %d", i, rules.size());
+            printf("%lu vs. size: %lu", i, rules.size());
 			return;
 		}
 		if (i != rules.size() -1)

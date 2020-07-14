@@ -13,7 +13,7 @@ namespace tcam {
 		return PrefixSizeHelper(low, high, boundLow, boundMid) + PrefixSizeHelper(low, high, boundMid + 1, boundHigh);
 	}
 
-	unsigned int SizeAsPrefixes(const array<unsigned int, 2>& range) {
+    unsigned int SizeAsPrefixes(const array<int_t, 2>& range) {
 		unsigned int low = range[LowDim];
 		unsigned int high = range[HighDim];
 		return PrefixSizeHelper(low, high, 0, 0xFFFFFFFF);

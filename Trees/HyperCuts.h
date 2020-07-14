@@ -46,12 +46,16 @@ public:
 	virtual void InsertRule(const Rule& rule) { 
 		printf("Can't insert rules.\n");
 	}
-	virtual Memory MemSizeBytes() const { return 0; } // TODO
+    virtual Memory MemSizeBytes() const {
+        //return 0;
+        return getMemory(root);
+    } // TODO
 	virtual int MemoryAccess() const { return 0; } // TODO
 	virtual size_t NumTables() const { return 1; }
 	virtual size_t RulesInTable(size_t tableIndex) const { return rules.size(); }
 
 private:
+    uint32_t getMemory(HyperCutsNode *node) const;
 	std::vector<Rule> rules;
 
 	HyperCutsNode* root;

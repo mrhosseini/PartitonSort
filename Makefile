@@ -10,17 +10,21 @@ UTILPATH = Utilities/
 VPATH = $(OVSPATH) $(MITPATH) $(TRACEPATH) $(IOPATH) $(UTILPATH) $(TREEPATH) $(SPPATH) 
 
 CXX = g++
-CXXFLAGS = -g -std=c++14  -fpermissive -O3 $(INCLUDE)
+CXXFLAGS = -g -std=c++14  -fpermissive -O0 $(INCLUDE)
 
 # Targets needed to bring the executable up to date
+all: main
 
-main: main.o Simulation.o InputReader.o OutputWriter.o trace_tools.o  SortableRulesetPartitioner.o misc.o OptimizedMITree.o PartitionSort.o red_black_tree.o stack.o cmap.o TupleSpaceSearch.o  HyperCuts.o HyperSplit.o  TreeUtils.o IntervalUtilities.o  MapExtensions.o Tcam.o
+main: main.o Simulation.o InputReader.o OutputWriter.o trace_tools.o  SortableRulesetPartitioner.o misc.o OptimizedMITree.o PartitionSort.o red_black_tree.o stack.o cmap.o TupleSpaceSearch.o  HyperCuts.o HyperSplit.o  TreeUtils.o IntervalUtilities.o  MapExtensions.o Tcam.o stats.o
 	$(CXX) $(CXXFLAGS) -o main *.o 
 
 # -------------------------------------------------------------------
 
 main.o: main.cpp ElementaryClasses.h SortableRulesetPartitioner.h InputReader.h Simulation.h BruteForce.h cmap.h TupleSpaceSearch.h trace_tools.h PartitionSort.h IntervalUtilities.h hash.h OptimizedMITree.h
 	$(CXX) $(CXXFLAGS) -c main.cpp
+
+stats.o: stats.cpp stats.h
+	$(CXX) $(CXXFLAGS) -c stats.cpp
 
 Simulation.o: Simulation.cpp Simulation.h ElementaryClasses.h
 	$(CXX) $(CXXFLAGS) -c Simulation.cpp

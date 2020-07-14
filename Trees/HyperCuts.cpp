@@ -1,10 +1,11 @@
 #include "HyperCuts.h"
+#include "../stats.h"
 
 using namespace std;
 using namespace TreeUtils;
 
 void PrintRange(const Range& r) {
-	printf("[%u - %u]", r.low, r.high);
+    printf("[%lu - %lu]", r.low, r.high);
 }
 
 void RemoveRedund(HyperCutsNode* node) {
@@ -535,6 +536,7 @@ int Classify(const HyperCutsNode* node, const Packet& packet) {
 	for (const Rule* r : node->classifier) {
 		//printf("%d -> ", r->priority);
 		//r->Print();
+        Stats::nodeAccess++; //mrho: ???
 		if (r->MatchesPacket(packet)) {
 			//printf("Match: %d\n", r->priority);
 			priority = max(priority, r->priority);
@@ -543,6 +545,7 @@ int Classify(const HyperCutsNode* node, const Packet& packet) {
 	}
 
 	if (!node->childArray.empty()) {
+        Stats::nodeAccess++;
 		//printf("Array\n");
 		int index = 0;
 		for (size_t d = 0; d < node->bounds.size(); d++) {
@@ -576,7 +579,7 @@ int Classify(const HyperCutsNode* node, const Packet& packet) {
 		//}
 
 		//printf("Index: %d / %u\n", index, node->childArray.size());
-		priority = max(priority, Classify(node->childArray[index], packet));
+		priority = max(priority, Classify(node->childArray[index], packet));        
 	}
 
 	return priority;
@@ -585,5 +588,30 @@ int Classify(const HyperCutsNode* node, const Packet& packet) {
 int HyperCuts::ClassifyAPacket(const Packet& packet) {
 	int p = Classify(root, packet);
 	//printf("Result - %d\n", p);
-	return p;
+    return p;
+}
+
+uint32_t HyperCuts::getMemory(HyperCutsNode *node) const
+{
+    uint32_t memory = 0;
+
+    if (!node)
+        return memory;
+
+    const int pointer_size = 4;
+    memory = 4; // depth
+    memory += node->cuts.size() * 4;
+    memory += node->bounds.size() * (8 + 8);
+    memory += node->classifier.size() * pointer_size;
+    memory += node->children.size() * pointer_size;
+    memory += node->childArray.size() * pointer_size;
+
+    if (node->children.empty())
+        return memory;
+
+    for (auto it = node->children.begin(); it != node->children.end(); it++) {
+        memory += getMemory(*it);
+    }
+
+    return memory;
 }

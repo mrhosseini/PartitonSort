@@ -11,6 +11,7 @@
 #include <memory>
 #include <chrono> 
 #include <array>
+#include "stats.h"
 #define FieldSA 0
 #define FieldDA 1
 #define FieldSP 2
@@ -20,10 +21,16 @@
 #define LowDim 0
 #define HighDim 1
 
-#define POINT_SIZE_BITS 32
+//#define POINT_SIZE_BITS 32
+#define POINT_SIZE_BITS 64
 
-typedef uint32_t Point;
+//typedef uint32_t Point;
+typedef uint64_t Point;
+
+typedef uint64_t int_t;
+
 typedef std::vector<Point> Packet;
+
 
 struct Rule
 {
@@ -43,6 +50,7 @@ struct Rule
 
 	bool inline MatchesPacket(const Packet& p) const {
 		for (int i = 0; i < dim; i++) {
+            Stats::nodeAccess++; //mrho ???
 			if (p[i] < range[i][LowDim] || p[i] > range[i][HighDim]) return false;
 		}
 		return true;
@@ -50,7 +58,7 @@ struct Rule
 
 	void Print() const {
 		for (int i = 0; i < dim; i++) {
-			printf("%u:%u ", range[i][LowDim], range[i][HighDim]);
+                        printf("%lu:%lu ", range[i][LowDim], range[i][HighDim]);
 		}
 		printf("\n");
 	}
@@ -68,7 +76,7 @@ public:
 
 class interval : public Interval {
 public: 
-	interval(unsigned int a, unsigned int b, int id) : a(a), b(b), id(id) {}
+    interval(int_t a, int_t b, int id) : a(a), b(b), id(id) {}
 	Point GetLowPoint() const { return a; }
 	Point GetHighPoint() const { return b; }
 	void Print()const {};

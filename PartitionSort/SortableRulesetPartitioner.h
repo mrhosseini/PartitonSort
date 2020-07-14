@@ -101,7 +101,7 @@ public:
 	void Print() const {
 		for (const Rule& r : rule_list) {
 			for (int f : field_order) {
-				printf("[%u, %u]", r.range[f][LowDim], r.range[f][HighDim]);
+                printf("[%lu, %lu]", r.range[f][LowDim], r.range[f][HighDim]);
 			}
 			printf("->%u\n", r.priority);
 		}

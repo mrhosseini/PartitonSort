@@ -38,7 +38,7 @@ std::vector<Packet> header_gen(int d, std::vector<Rule>& filters, float a, float
     // printf("RandFilt = %d, a = %.4f, b = %.4f, Copies = %d\n",RandFilt,a,b,Copies);
 
     // Add to header list
-	std::vector<unsigned> temp;
+    std::vector<int_t> temp;
 	for (int i = 0; i < d; i++) temp.push_back(new_hdr[i]);
 	for (int i = 0; i < Copies; i++)  {
 		temp_packets.push_back(temp);
@@ -47,7 +47,7 @@ std::vector<Packet> header_gen(int d, std::vector<Rule>& filters, float a, float
     num_headers += Copies;
   }
 
-  delete(new_hdr);
+  delete [](new_hdr);
   return std::vector<Packet>(begin(temp_packets), begin(temp_packets)+threshold);
 }
 void RandomCorner(int RandFilt, std::vector<Rule>& filts, unsigned* new_hdr, int d){

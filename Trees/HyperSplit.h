@@ -16,7 +16,7 @@ public:
 	virtual int Size(int ruleSize) const = 0;
 	virtual bool IsEmpty() const = 0;
 
-	virtual void SetBounds(const std::vector<std::vector<unsigned int>>& bounds) = 0;
+    virtual void SetBounds(const std::vector<std::vector<int_t>>& bounds) = 0;
 };
 
 class NodeTable : public ClassifierTable {
@@ -70,13 +70,18 @@ private:
 
 class HyperSplit : public PacketClassifier {
 public:
-	HyperSplit(std::vector<std::vector<unsigned int>> bounds, int leafSize) : bounds(bounds), leafSize(leafSize){}
+    HyperSplit(std::vector<std::vector<int_t>> bounds, int leafSize) : bounds(bounds), leafSize(leafSize){}
 	HyperSplit(int leafSize = 8) : leafSize(leafSize) {
-		bounds.push_back(std::vector<unsigned int>{0, 0xFFFFFFFFu});
-		bounds.push_back(std::vector<unsigned int>{0, 0xFFFFFFFFu});
-		bounds.push_back(std::vector<unsigned int>{0, 0xFFFFu});
-		bounds.push_back(std::vector<unsigned int>{0, 0xFFFFu});
-		bounds.push_back(std::vector<unsigned int>{0, 0xFFu});
+        bounds.push_back(std::vector<int_t>{0, 0xFFFFFFFFu});
+        bounds.push_back(std::vector<int_t>{0, 0xFFFFFFFFu});
+        bounds.push_back(std::vector<int_t>{0, 0xFFFFu});
+        bounds.push_back(std::vector<int_t>{0, 0xFFFFu});
+        bounds.push_back(std::vector<int_t>{0, 0xFFu});
+        //mrho: for 9 fields:
+        bounds.push_back(std::vector<int_t>{0, 0xFFFFFFFFFFFFu});
+        bounds.push_back(std::vector<int_t>{0, 0xFFFFFFFFFFFFu});
+        bounds.push_back(std::vector<int_t>{0, 0xFFFFu});
+        bounds.push_back(std::vector<int_t>{0, 0xFFFFu});
 	}
 	HyperSplit(const std::unordered_map<std::string, std::string>& args) : HyperSplit(GetIntOrElse(args, "HyperSplit.Leaf", 8)) {}
 	virtual ~HyperSplit() {
@@ -95,7 +100,7 @@ public:
 	size_t NumTables() const { return 1; }
 	size_t RulesInTable(size_t index) const { return rules.size(); }
 private:
-	std::vector<std::vector<unsigned int>> bounds;
+    std::vector<std::vector<int_t>> bounds;
 	Node* root;
 	std::vector<Rule> rules;
 	int leafSize;
@@ -107,7 +112,7 @@ public:
 	/**
 	* Constructor: Takes ownership of the designated pointers
 	*/
-	HyperSplitNode(const std::vector<std::vector<unsigned int>>& bounds, unsigned int split, int dim, Node* lc, Node* rc)
+    HyperSplitNode(const std::vector<std::vector<int_t>>& bounds, int_t split, int dim, Node* lc, Node* rc)
 		: splitPoint(split), splitDim(dim), leftChild(lc), rightChild(rc), bounds(bounds) {
 		if (splitDim > 10 || splitDim < 0) {
 			std::cout << splitDim << std::endl;
@@ -126,32 +131,32 @@ public:
 	int Size(int ruleSize) const;
 	bool IsEmpty() const { return false; }
 
-	void SetBounds(const std::vector<std::vector<unsigned int>>& bounds);
+    void SetBounds(const std::vector<std::vector<int_t>>& bounds);
 private:
 
-	const unsigned int splitPoint;
+    const int_t splitPoint;
 	const int splitDim;
 	Node* leftChild;
 	Node* rightChild;
 
-	std::vector<std::vector<unsigned int>> bounds;
+    std::vector<std::vector<int_t>> bounds;
 };
 
 class ListNode : public Node {
 public:
 	//ListNode(const std::vector<std::vector<unsigned int>>& bounds) : bounds(bounds) {}
-	ListNode(const std::vector<std::vector<unsigned int>>& bounds, const std::vector<Rule>& rules) : rules(rules), bounds(bounds) { }
+    ListNode(const std::vector<std::vector<int_t>>& bounds, const std::vector<Rule>& rules) : rules(rules), bounds(bounds) { }
 
 	int ClassifyAPacket(const Packet& p);
 	Node* DeleteRule(const Rule& r);
 	Node* InsertRule(unsigned int leafSize, const Rule& r);
 	int Size(int ruleSize) const;
 	bool IsEmpty() const { return rules.empty(); }
-	void SetBounds(const std::vector<std::vector<unsigned int>>& bounds);
+    void SetBounds(const std::vector<std::vector<int_t>>& bounds);
 private:
 
 	std::vector<Rule> rules;
-	std::vector<std::vector<unsigned int>> bounds;
+    std::vector<std::vector<int_t>> bounds;
 };
 
 Node* SplitRules(const std::vector<std::vector<unsigned int>>& bounds, const std::vector<Rule>& rules, unsigned int leafSize);

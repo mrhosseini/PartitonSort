@@ -11,9 +11,9 @@
 
 using namespace std;
 
-typedef pair<unsigned int, unsigned int> Range;
+typedef pair<int_t, int_t> Range;
 
-void CheckBounds(const vector<vector<unsigned int>> &bounds, const string &s) {
+void CheckBounds(const vector<vector<int_t>> &bounds, const string &s) {
 	if (bounds.size() != 5) {
 		cout << s << endl;
 		cout << "Incorrect bounds: " << bounds.size() << endl;
@@ -21,20 +21,20 @@ void CheckBounds(const vector<vector<unsigned int>> &bounds, const string &s) {
 	}
 }
 
-void CheckBounds(const vector<vector<unsigned int>> &bounds) {
+void CheckBounds(const vector<vector<int_t>> &bounds) {
 	string s = "";
 	CheckBounds(bounds, s);
 }
 
-void PrintBounds(const vector<vector<unsigned int>> &bounds) {
+void PrintBounds(const vector<vector<int_t>> &bounds) {
 	cout << "(";
-	for (const vector<unsigned int>& s : bounds) {
+    for (const vector<int_t>& s : bounds) {
 		cout << s[LowDim] << "-" << s[HighDim] << ",";
 	}
 	cout << ")" << endl;
 }
 
-vector<Rule> LeftList(const vector<Rule>& rules, int dim, unsigned int splitPoint) {
+vector<Rule> LeftList(const vector<Rule>& rules, int dim, int_t splitPoint) {
 	vector<Rule> leftList;
 	for (const Rule& r : rules) {
 		if (r.range[dim][LowDim] <= splitPoint) {
@@ -44,7 +44,7 @@ vector<Rule> LeftList(const vector<Rule>& rules, int dim, unsigned int splitPoin
 	return leftList;
 }
 
-vector<Rule> RightList(const vector<Rule>& rules, int dim, unsigned int splitPoint) {
+vector<Rule> RightList(const vector<Rule>& rules, int dim, int_t splitPoint) {
 	vector<Rule> rightList;
 	for (const Rule& r : rules) {
 		if (r.range[dim][HighDim] > splitPoint) {
@@ -54,13 +54,13 @@ vector<Rule> RightList(const vector<Rule>& rules, int dim, unsigned int splitPoi
 	return rightList;
 }
 
-vector<unsigned int> GetSplitPoints(const vector<vector<unsigned int>>& bounds, const vector<Rule>& rules, int dim) {
-	set<unsigned int> lows, highs;
+vector<int_t> GetSplitPoints(const vector<vector<int_t>>& bounds, const vector<Rule>& rules, int dim) {
+    set<int_t> lows, highs;
 	lows.insert(bounds[dim][LowDim]);
 	highs.insert(bounds[dim][HighDim]);
 
 	for (const Rule& r : rules) {
-		lows.insert(max(r.range[dim][LowDim], bounds[dim][LowDim]));
+        lows.insert(max(r.range[dim][LowDim], bounds[dim][LowDim]));
 		highs.insert(min(r.range[dim][HighDim], bounds[dim][HighDim]));
 	}
 	lows.erase(lows.find(bounds[dim][LowDim]));
@@ -68,26 +68,26 @@ vector<unsigned int> GetSplitPoints(const vector<vector<unsigned int>>& bounds, 
 		highs.insert(l - 1);
 	}
 
-	vector<unsigned int> result;
-	for (unsigned int h : highs) {
+    vector<int_t> result;
+    for (int_t h : highs) {
 		result.push_back(h);
 	}
 	sort(result.begin(), result.end());
 	return result;
 }
 
-vector<Range> GetRanges(const vector<vector<unsigned int>>& bounds, const vector<Rule>& rules, int dim) {
-	vector<unsigned int> splits = GetSplitPoints(bounds, rules, dim);
+vector<Range> GetRanges(const vector<vector<int_t>>& bounds, const vector<Rule>& rules, int dim) {
+    vector<int_t> splits = GetSplitPoints(bounds, rules, dim);
 	vector<Range> results;
-	unsigned int l = bounds[dim][LowDim];
-	for (unsigned int r : splits) {
+    int_t l = bounds[dim][LowDim];
+    for (int_t r : splits) {
 		results.push_back(Range(l, r));
 		l = r + 1;
 	}
 	return results;
 }
 
-unsigned int SelectDimToSplit(const vector<vector<unsigned int>>& bounds, const vector<Rule>& rules) {
+unsigned int SelectDimToSplit(const vector<vector<int_t>>& bounds, const vector<Rule>& rules) {
 	auto dimCost = [&rules, &bounds](int dim) -> double {
 		auto segments = GetRanges(bounds, rules, dim);
 
@@ -114,7 +114,7 @@ unsigned int SelectDimToSplit(const vector<vector<unsigned int>>& bounds, const 
 	return -1;
 }
 
-unsigned int SelectSplitPoint(const vector<vector<unsigned int>>& bounds, const vector<Rule>& rules, int dim) {
+int_t SelectSplitPoint(const vector<vector<int_t>>& bounds, const vector<Rule>& rules, int dim) {
 	vector<Range> segments = GetRanges(bounds, rules, dim);
 	vector<int> costs;
 
@@ -144,7 +144,7 @@ unsigned int SelectSplitPoint(const vector<vector<unsigned int>>& bounds, const 
 	}
 }
 
-Node* SplitRules(const vector<vector<unsigned int>>& bounds, const vector<Rule>& rules, unsigned int leafSize) {
+Node* SplitRules(const vector<vector<int_t>>& bounds, const vector<Rule>& rules, unsigned int leafSize) {
 	//PrintBounds(bounds);
 	//CheckBounds(bounds);
 
@@ -152,7 +152,7 @@ Node* SplitRules(const vector<vector<unsigned int>>& bounds, const vector<Rule>&
 		return new ListNode(bounds, rules);
 	} else {
 		unsigned int dim = SelectDimToSplit(bounds, rules);
-		unsigned int split = SelectSplitPoint(bounds, rules, dim);
+        int_t split = SelectSplitPoint(bounds, rules, dim);
 
 		if (dim >= bounds.size() || dim < 0) {
 			cout << "Bad dim!" << dim << endl;
@@ -161,7 +161,7 @@ Node* SplitRules(const vector<vector<unsigned int>>& bounds, const vector<Rule>&
 
 
 		if (split != bounds[dim][HighDim]) {
-			vector<vector<unsigned int>> lbounds(bounds), rbounds(bounds);
+            vector<vector<int_t>> lbounds(bounds), rbounds(bounds);
 			lbounds[dim][HighDim] = split;
 			rbounds[dim][HighDim] = split + 1;
 			auto lrl = LeftList(rules, dim, split);
@@ -219,12 +219,14 @@ void HyperSplit::InsertRule(const Rule& r) {
 
 Memory HyperSplit::MemSizeBytes() const {
 	int size = 0;
-	for (const vector<unsigned int> & field : bounds) {
+    for (const vector<int_t> & field : bounds) {
 		if (field[HighDim] == 0xFFFFFFFFu) {
 			size += 5;
 		} else if (field[HighDim] == 0xFFu) {
 			size += 1;
-		} else { //if (field[HighDim] == 0xFFFFu) {
+        } else if (field[HighDim] == 0xFFFFFFFFFFFFu) {
+            size += 6; // can be 8.
+        } else { //if (field[HighDim] == 0xFFFFu) {
 			size += 4;
 		}
 		// else {
@@ -241,6 +243,7 @@ Memory HyperSplit::MemSizeBytes() const {
 
 int HyperSplitNode::ClassifyAPacket(const Packet& p) {
 	unsigned int pt = p[splitDim];
+    Stats::nodeAccess++;
 	if (pt <= splitPoint) {
 		return leftChild->ClassifyAPacket(p);
 	} else {
@@ -308,10 +311,18 @@ Node* HyperSplitNode::InsertRule(unsigned int leafSize, const Rule& one_rule) {
 }
 
 int HyperSplitNode::Size(int ruleSize) const {
-	return NodeSize + leftChild->Size(ruleSize) + rightChild->Size(ruleSize);
+//    static int cntH = 0;
+//    printf("\nHbounds = %lu", bounds.size());
+    int boundsMemory = 0;
+    for (uint32_t i = 0; i < bounds.size(); i++) {
+//        printf("\n Hbounds[%u] = %lu", i, bounds[i].size());
+        boundsMemory += bounds[i].size() * sizeof(int_t);
+    }
+//    printf("\n cntH = %d", ++cntH);
+    return NodeSize + leftChild->Size(ruleSize) + rightChild->Size(ruleSize) + boundsMemory + sizeof(int) + sizeof (int_t);
 }
 
-void HyperSplitNode::SetBounds(const std::vector<std::vector<unsigned int>>& bounds) {
+void HyperSplitNode::SetBounds(const std::vector<std::vector<int_t> > &bounds) {
 	CheckBounds(bounds);
 	this->bounds = bounds;
 }
@@ -323,9 +334,11 @@ void HyperSplitNode::SetBounds(const std::vector<std::vector<unsigned int>>& bou
 int ListNode::ClassifyAPacket(const Packet& p) {
 	int bestPriority = -1;
 	for (size_t i = 0; i < rules.size(); i++) {
+        Stats::nodeAccess++;
 		if (rules[i].priority > bestPriority) {
 			bool matches = true;
 			for (int d = 0; d < rules[i].dim; d++) {
+                Stats::nodeAccess++; //mrho: ???
 				if (!(rules[i].range[d][LowDim] <= p[d] && rules[i].range[d][HighDim] >= p[d])) {
 					matches = false;
 					break;
@@ -356,10 +369,18 @@ Node* ListNode::InsertRule(unsigned int leafSize, const Rule& r) {
 }
 
 int ListNode::Size(int ruleSize) const {
-	return NodeSize + ruleSize * rules.size();
+//    static int cntL = 0;
+//    printf("\nbounds = %lu", bounds.size());
+    int boundsMemory = 0;
+    for (uint32_t i = 0; i < bounds.size(); i++) {
+//        printf("\n bounds[%u] = %lu", i, bounds[i].size());
+        boundsMemory += bounds[i].size() * sizeof(int_t);
+    }
+//    printf("\n cntL = %d", ++cntL);
+    return /*NodeSize +*/ ruleSize * rules.size() + boundsMemory;
 }
 
-void ListNode::SetBounds(const std::vector<std::vector<unsigned int>>& bounds) {
+void ListNode::SetBounds(const std::vector<std::vector<int_t> > &bounds) {
 	CheckBounds(bounds);
 	this->bounds = bounds;
 }

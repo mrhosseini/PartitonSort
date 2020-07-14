@@ -18,7 +18,7 @@ struct Range {
 };
 
 namespace TreeUtils {
-	inline Range V2R(const std::array<unsigned int, 2> & v) {
+    inline Range V2R(const std::array<int_t, 2> & v) {
 		return Range{ v[LowDim], v[HighDim] };
 	}
 

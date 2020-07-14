@@ -1,4 +1,5 @@
 #include "red_black_tree.h"
+#include "../stats.h"
 
 int CompareBox(const box& a, const box& b ) {
 	int compare_size = a.size();
@@ -433,13 +434,13 @@ rb_red_blk_node * RBTreeInsertWithPathCompression(rb_red_blk_tree* tree, const s
 		  } else if (!(temp_chain_boxes[run][0] == key[fieldOrder[level + run]][0] && temp_chain_boxes[run][1] == key[fieldOrder[level + run]][1])) {
 			  if (IsIntersect(temp_chain_boxes[run][0], temp_chain_boxes[run][1], key[fieldOrder[level + run]][0], key[fieldOrder[level + run]][1])) {
 				  printf("Warning not intersect?\n");
-				  printf("[%lu %lu] vs. [%lu %lu]\n", temp_chain_boxes[run][LowDim], temp_chain_boxes[run][HighDim], key[fieldOrder[level + run]][LowDim], key[fieldOrder[level + run]][HighDim]);
+                  printf("[%lu %lu] vs. [%lu %lu]\n", temp_chain_boxes[run][LowDim], temp_chain_boxes[run][HighDim], key[fieldOrder[level + run]][LowDim], key[fieldOrder[level + run]][HighDim]);
 				  printf("chain_boxes:\n");
 				  for (auto e : temp_chain_boxes)
-					  printf("[%u %u] ", e[LowDim], e[HighDim]);
+                      printf("[%lu %lu] ", e[LowDim], e[HighDim]);
 				  printf("\n boxes:\n");
 				  for (size_t i = 0; i < key.size(); i++) {
-					  printf("[%u %u] ", key[fieldOrder[i]][LowDim], key[fieldOrder[i]][HighDim]);
+                      printf("[%lu %lu] ", key[fieldOrder[i]][LowDim], key[fieldOrder[i]][HighDim]);
 				  }
 				  printf("\n");
 				  exit(0);
@@ -665,7 +666,7 @@ bool TreeInsertHelp(rb_red_blk_tree* tree, rb_red_blk_node* z, const std::vector
 			free(z);
 			return true;
 		} else {  /* x.key || z.key */
-			printf("x:[%u %u], z:[%u %u]\n", x->key[LowDim], x->key[HighDim], z->key[LowDim], z->key[HighDim]);
+            printf("x:[%lu %lu], z:[%lu %lu]\n", x->key[LowDim], x->key[HighDim], z->key[LowDim], z->key[HighDim]);
 			printf("Warning TreeInsertHelp : x.key || z.key\n");
 		}
 	}
@@ -917,12 +918,14 @@ int RBExactQueryIterative(rb_red_blk_tree*  tree, const Packet& q, const std::ve
 	int level = 0;
 	int compVal;
 	while (true) { 
+        Stats::nodeAccess++;
 		//check if singleton 
 		if (level == fieldOrder.size()) {
 			return tree->GetMaxPriority();
 		} else if (tree->count == 1) {
 			//  auto chain_boxes = tree->chain_boxes; 
 			for (size_t i = level; i < fieldOrder.size(); i++) {
+                Stats::nodeAccess++;
 				if (q[fieldOrder[i]] < tree->chain_boxes[i - level][0]) return -1;
 				if (q[fieldOrder[i]] > tree->chain_boxes[i - level][1]) return -1;
 			}
@@ -931,12 +934,13 @@ int RBExactQueryIterative(rb_red_blk_tree*  tree, const Packet& q, const std::ve
 		}
 
  		rb_red_blk_node* x = tree->root->left;
-		rb_red_blk_node* nil = tree->nil;
+		rb_red_blk_node* nil = tree->nil;        
 		
 		if (x == nil) return -1;
 		compVal = CompareQuery(x->key, q, level, fieldOrder);
-		// printf("Compval = %d\n", compVal);
+		// printf("Compval = %d\n", compVal);        
 		while (0 != compVal) {/*assignemnt*/
+            Stats::nodeAccess++;
 			if (1 == compVal) { /* x->key > q */
 				x = x->left;
 			} else if (-1 == compVal) /*x->key < q */{
@@ -1222,7 +1226,7 @@ void RBTreeDeleteWithPathCompression(rb_red_blk_tree*& tree, const std::vector<b
 			return; 
 		
 		} else {  /* x.key || z.key */
-			printf("x:[%u %u], key:[%u %u]\n", x->key[LowDim], x->key[HighDim], key[fieldOrder[level]][LowDim], key[fieldOrder[level]][HighDim]);
+            printf("x:[%lu %lu], key:[%lu %lu]\n", x->key[LowDim], x->key[HighDim], key[fieldOrder[level]][LowDim], key[fieldOrder[level]][HighDim]);
 			printf("Warning RBFindNodeSequence : x.key || key[fieldOrder[level]]\n");
 		}
 	}
@@ -1401,8 +1405,8 @@ std::vector<Rule> RBSerializeIntoRules(rb_red_blk_tree* tree, const std::vector<
 //Practice of self-documenting codes.
 
 int  CalculateMemoryConsumptionRecursion(rb_red_blk_tree * treenode, rb_red_blk_node * node, int level, const std::vector<int>& fieldOrder) {
-	if (level == fieldOrder.size()) {
 
+    if ((uint32_t) level == fieldOrder.size()) {
 		int num_rules_in_this_leaf = treenode->priority_list.size();
 		int sizeofint = 4;
 		int also_max_priority = 1;
@@ -1417,22 +1421,27 @@ int  CalculateMemoryConsumptionRecursion(rb_red_blk_tree * treenode, rb_red_blk_
 			if (field == 0 || field == 1) {
 				intervalsize = 9;
 			}
-			if (field == 2 || field == 3) {
+            if (field == 2 || field == 3 || field == 7 || field == 8) { //mrho ng
 				intervalsize = 4;
 			}
 			if (field == 4) {
 				intervalsize = 1;
 			}
+            if (field == 5 || field == 6) { //mrho ng
+                intervalsize = 12;
+            }
 			size_of_remaining_intervals += intervalsize;
 		} 
 		int num_rules_in_this_leaf = treenode->priority_list.size();
 		int sizeofint = 4;
 		int also_max_priority = 1;
 
-		return   size_of_remaining_intervals + (num_rules_in_this_leaf + also_max_priority)*sizeofint;
+        int chain_box_memory = treenode->chain_boxes.size() * 2 * sizeof(int_t); //mrho
+
+        return   size_of_remaining_intervals + (num_rules_in_this_leaf + also_max_priority) * sizeofint + chain_box_memory; //mrho chain_box_memory
 	}
 
-	if (treenode->nil == node) return 0;
+    if (treenode->nil == node) {return 0;}
 	
 	int memory_usage = 0; 
 	auto tree = node->rb_tree_next_level;
@@ -1446,21 +1455,24 @@ int  CalculateMemoryConsumptionRecursion(rb_red_blk_tree * treenode, rb_red_blk_
 	int sizeofint = 4;
 	int also_max_priority_interval_node = 1;
 
-	int field = fieldOrder[level]%5;
+    //int field = fieldOrder[level]%5; //mrho
+    int field = fieldOrder[level]%9; //mrho
 	int intervalsize;
-	if (field == 0 || field == 1) {
-		intervalsize = 9;
-	}
-	if (field == 2 || field == 3) {
-		intervalsize = 4;
-	}
-	if (field == 4) {
-		intervalsize = 1;
-	}
+    if (field == 0 || field == 1) {
+        intervalsize = 9;
+    }
+    if (field == 2 || field == 3 || field == 7 || field == 8) { //mrho ng
+        intervalsize = 4;
+    }
+    if (field == 4) {
+        intervalsize = 1;
+    }
+    if (field == 5 || field == 6) { //mrho ng
+        intervalsize = 12;
+    }
 	return memory_usage + intervalsize+ (number_pointers_in_internal_node+ also_max_priority_interval_node) *sizeofint + aux_data_internal_node_byte;
 }
 
 int CalculateMemoryConsumption(rb_red_blk_tree* tree, const std::vector<int>& fieldOrder) {
-
 	return CalculateMemoryConsumptionRecursion(tree, tree->root->left, 0, fieldOrder);
 }

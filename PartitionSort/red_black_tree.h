@@ -65,7 +65,7 @@ typedef struct rb_red_blk_tree {
 
   void PrintKey(const box& b)
   {
-	  printf("[%u %u]\n", b[LowDim], b[HighDim]);
+      printf("[%lu %lu]\n", b[LowDim], b[HighDim]);
   }
   void PushPriority(int p) {
  
@@ -92,7 +92,7 @@ typedef struct rb_red_blk_tree {
   }
 } rb_red_blk_tree;
 
-bool inline Overlap(unsigned int a1, unsigned  int a2, unsigned int b1, unsigned int b2) {
+bool inline Overlap(int_t a1, int_t a2, int_t b1, int_t b2) {
 	if (a1 <= b1) {
 		return((b1 <= a2));
 	} else {

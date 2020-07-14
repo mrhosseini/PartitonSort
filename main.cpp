@@ -19,6 +19,9 @@
 #include <chrono>
 #include <string>
 #include <sstream>
+#include <unordered_map>
+
+#include "stats.h"
 
 using namespace std;
 
@@ -40,14 +43,14 @@ TestMode ParseMode(const string& mode);
 
 
 int main(int argc, char* argv[]) {
-	unordered_map<string, string> args = ParseArgs(argc, argv);
+    unordered_map<string, string> args = ParseArgs(argc, argv);
 
 	string filterFile = GetOrElse(args, "f", "fw1_seed_1.rules");
 	string packetFile = GetOrElse(args, "p", "Auto");
 	string outputFile = GetOrElse(args, "o", "");
 
 	string database = GetOrElse(args, "d", "");
-	bool doShuffle = GetBoolOrElse(args, "Shuffle", true);
+    bool doShuffle = GetBoolOrElse(args, "Shuffle", false);
 
 	//set by default
 	ClassifierTests classifier = ParseClassifier(GetOrElse(args, "c", "PriorityTuple,PartitionSort"));
@@ -66,6 +69,10 @@ int main(int argc, char* argv[]) {
 	}
 	
 	//assign mode and classifer
+//    filterFile = "fw1_seed_1_10.rules";
+    filterFile = "of1_1k.txt";
+    packetFile = "of1_1k.trace";
+
 	vector<Rule> rules = InputReader::ReadFilterFile(filterFile);
 
 	vector<Packet> packets;
@@ -74,38 +81,39 @@ int main(int argc, char* argv[]) {
 	else if(packetFile != "") packets = InputReader::ReadPackets(packetFile);
 
 
-	if (doShuffle) {
-		rules = Random::shuffle_vector(rules);
-	}
+    if (doShuffle) {
+        rules = Random::shuffle_vector(rules);
+    }
 
-	switch (mode)
-	{
-			case ModeClassification:
-			  RunSimulatorOnlyClassification(args, packets, rules, classifier, outputFile);
-				break;
-			case ModeUpdate:
-				RunSimulatorUpdates(args, packets, rules, classifier, outputFile);
-				break;
-			case ModeValidation:
-				RunValidation(args, packets, rules, classifier);
-			        break;
-	}
- 
-	printf("Done\n");
-	return 0;
+    switch (mode)
+    {
+    case ModeClassification:
+        RunSimulatorOnlyClassification(args, packets, rules, classifier, outputFile);
+        break;
+    case ModeUpdate:
+        RunSimulatorUpdates(args, packets, rules, classifier, outputFile);
+        break;
+    case ModeValidation:
+        RunValidation(args, packets, rules, classifier);
+        break;
+    }
+
+    printf("Done\n");
+    return 0;
 }
 
 
 
 vector<int> RunSimulatorClassificationTrial(Simulator& s, const string& name, PacketClassifier& classifier, vector<map<string, string>>& data) {
 	map<string, string> d = { { "Classifier", name } };
-	printf("%s\n", name.c_str());
+    printf("\n---------------------------------------------------------\n%s\n", name.c_str());
+    Stats::nodeAccess = 0;
 	auto r = s.PerformOnlyPacketClassification(classifier, d);
 	data.push_back(d);
 	return r;
 }
 
-pair< vector<string>, vector<map<string, string>>>  RunSimulatorOnlyClassification(const unordered_map<string, string>& args, const vector<Packet>& packets, const vector<Rule>& rules, ClassifierTests tests, const string& outfile = "") {
+pair< vector<string>, vector<map<string, string>>>  RunSimulatorOnlyClassification(const unordered_map<string, string>& args, const vector<Packet>& packets, const vector<Rule>& rules, ClassifierTests tests, const string& outfile) {
 	printf("Classification Simulation\n");
 	Simulator s(rules, packets);
 
@@ -152,7 +160,7 @@ void RunSimulatorUpdateTrial(const Simulator& s, const string& name, PacketClass
 	data.push_back(d);
 }
 
-pair< vector<string>, vector<map<string, string>>>  RunSimulatorUpdates(const unordered_map<string, string>& args, const vector<Packet>& packets, const vector<Rule>& rules, ClassifierTests tests, const string& outfile, int repetitions = 1) {
+pair< vector<string>, vector<map<string, string>>>  RunSimulatorUpdates(const unordered_map<string, string>& args, const vector<Packet>& packets, const vector<Rule>& rules, ClassifierTests tests, const string& outfile, int repetitions) {
 	printf("Update Simulation\n");
 
 	vector<string> header = { "Classifier", "UpdateTime(s)" };
@@ -175,7 +183,7 @@ pair< vector<string>, vector<map<string, string>>>  RunSimulatorUpdates(const un
 	return make_pair(header, data);
 }
 
-bool Validation(const unordered_map<string, PacketClassifier*> classifiers, const vector<Rule>& rules, const vector<Packet>& packets, int threshold = 10) {
+bool Validation(const unordered_map<string, PacketClassifier*> classifiers, const vector<Rule>& rules, const vector<Packet>& packets, int threshold) {
 	int numWrong = 0;
 	vector<Rule> sorted = rules;
 	sort(sorted.begin(), sorted.end(), [](const Rule& rx, const Rule& ry) { return rx.priority >= ry.priority; });
@@ -189,7 +197,7 @@ bool Validation(const unordered_map<string, PacketClassifier*> classifiers, cons
 		if (!all_of(results.begin(), results.end(), [=](const auto& pair) { return pair.second == result; })) {
 			numWrong++;
 			for (auto x : p) {
-				printf("%u ", x);
+                printf("%lu ", x);
 			}
 			printf("\n");
 			for (const auto& pair : results) {
@@ -235,7 +243,7 @@ void RunValidation(const unordered_map<string, string>& args, const vector<Packe
 	printf("Testing\n");
 	int threshold = GetIntOrElse(args, "Validate.Threshold", 10);
 	if (Validation(classifiers, rules, packets, threshold)) {
-		printf("All classifiers are in accord\n");
+        printf("All classifiers are in accord\n");
 	}
 
 	for (auto& pair : classifiers) {

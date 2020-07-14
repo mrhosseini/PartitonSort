@@ -4,6 +4,7 @@
 #include "OptimizedMITree.h"
 #include "../Simulation.h"
 #include "SortableRulesetPartitioner.h"
+#include "../stats.h"
 class PartitionSort : public PacketClassifier {
 
 public:
@@ -22,8 +23,8 @@ public:
 	int ClassifyAPacket(const Packet& packet) {
 		int result = -1;
 		int query = 0;
-		for (const auto& t : mitrees) {
-		
+        for (const auto& t : mitrees) {
+            Stats::nodeAccess++;
 			if (result > t->MaxPriority()){
 				break;
 			}
@@ -44,7 +45,7 @@ public:
 		}
 		int size_array_pointers = mitrees.size();
 		int size_of_pointer = 4;
-		return size_total_bytes + size_array_pointers*size_of_pointer;
+        return size_total_bytes + size_array_pointers * size_of_pointer;
 	}
 	int MemoryAccess() const {
 		return 0;

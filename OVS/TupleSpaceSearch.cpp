@@ -1,4 +1,5 @@
 #include "TupleSpaceSearch.h"
+#include "../stats.h"
 
 // Values for Bernstein Hash
 #define HashBasis 5381
@@ -42,6 +43,7 @@ int Tuple::FindMatchPacket(const Packet& p)  {
 	cmap_node * found_node = cmap_find(&map_in_tuple, HashPacket(p));
 	int priority = -1;
 	while (found_node != nullptr) {
+        Stats::nodeAccess++;
 		if (found_node->rule_ptr->MatchesPacket(p)) {
 			priority = std::max(priority, found_node->priority);
 		}
@@ -122,6 +124,7 @@ int TupleSpaceSearch::ClassifyAPacket(const Packet& packet) {
 	int priority = -1;
 	int query = 0;
 	for (auto& tuple : all_tuples) {
+        Stats::nodeAccess++;
 		auto result = tuple.second.FindMatchPacket(packet);
 		priority = std::max(priority, result);
 		query++;
@@ -207,6 +210,7 @@ int PriorityTupleSpaceSearch::ClassifyAPacket(const Packet& packet) {
 	int priority = -1;
 	int q = 0;
 	for (auto& tuple : priority_tuples_vector) {
+        Stats::nodeAccess++;
 		//if (tuple->maxPriority < 0) printf("priority %d\n", tuple->maxPriority);
 		if (priority > tuple->maxPriority) break;
 		auto result = tuple->FindMatchPacket(packet);

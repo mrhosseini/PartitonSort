@@ -33,8 +33,11 @@ public:
 	//	return  table.size();
 	}
 	Memory MemSizeBytes(Memory ruleSizeBytes) const {
-		return 	cmap_count(&map_in_tuple)* ruleSizeBytes + cmap_array_size(&map_in_tuple) * POINTER_SIZE_BYTES;
+        //return 	cmap_count(&map_in_tuple)* ruleSizeBytes + cmap_array_size(&map_in_tuple) * POINTER_SIZE_BYTES; //mrho
 		//return table.size() * ruleSizeBytes + table.bucket_count() * POINTER_SIZE_BYTES;
+        uint32_t m1 = cmap_count(&map_in_tuple)* ruleSizeBytes + cmap_array_size(&map_in_tuple) * POINTER_SIZE_BYTES;
+        int sizeofint = 4;
+        return m1 + (dims.size() + lengths.size() + tuple.size()) * sizeofint;
 	}
 
 	void printsipdip() {
@@ -143,12 +146,14 @@ public:
 	void InsertRule(const Rule& one_rule);
 	int WorstAccesses() const;
 	Memory MemSizeBytes() const {
-		int ruleSizeBytes = 19; // TODO variables sizes
+        //int ruleSizeBytes = 19; // TODO variables sizes
+        int ruleSizeBytes = 35; // TODO variables sizes //mrho for ng
 		int sizeBytes = 0;
 		for (auto& tuple : priority_tuples_vector) {
 			sizeBytes += tuple->MemSizeBytes(ruleSizeBytes);
 		}
-		return sizeBytes + rules.size()*16;
+        //return sizeBytes + rules.size()*16;
+        return sizeBytes + rules.size()*32; //mrho for ng
 	}
 
 	int GetNumberOfTuples() const {

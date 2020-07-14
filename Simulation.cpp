@@ -2,6 +2,8 @@
 #include <string>
 #include <sstream>
 
+#include "stats.h"
+
 std::mt19937 Random::generator(0);
 
 std::vector<Request> Simulator::GenerateRequests(int num_packet, int num_insert, int num_delete) const {
@@ -129,19 +131,21 @@ std::vector<int> Simulator::PerformOnlyPacketClassification(PacketClassifier& cl
 	for (int t = 0; t < trials; t++) {
 		results.clear();
 		start = std::chrono::steady_clock::now();
+        Stats::nodeAccess = 0;
 		for (auto const &p : packets) {
 			results.push_back(classifier.ClassifyAPacket(p));
 		}
 		end = std::chrono::steady_clock::now();
+        printf("\nTotal Node Access = %lu, Average = %lf", Stats::nodeAccess, (double) Stats::nodeAccess / packets.size());
 		elapsed_seconds = end - start;
 		sum_time += elapsed_seconds; 
 	} 
 
-	printf("\tClassification time: %f s\n", sum_time.count() / trials);
+    printf("\n\tClassification time: %f s\n", sum_time.count() / trials);
 	summary["ClassificationTime(s)"] = std::to_string(sum_time.count() / trials);
 	
 	int memSize = classifier.MemSizeBytes();
-	printf("\tSize(bytes): %d \n", memSize);
+    printf("\tSize(bytes): %d (%lf bytes / rule)\n", memSize, memSize / (double) ruleset.size());
 	summary["Size(bytes)"] = std::to_string(memSize);
 	int memAccess = classifier.MemoryAccess();
 	printf("\tMemoryAccess: %d \n", memAccess);
