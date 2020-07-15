@@ -443,7 +443,7 @@ rb_red_blk_node * RBTreeInsertWithPathCompression(rb_red_blk_tree* tree, const s
                       printf("[%lu %lu] ", key[fieldOrder[i]][LowDim], key[fieldOrder[i]][HighDim]);
 				  }
 				  printf("\n");
-				  exit(0);
+                 // exit(0); //TODO: mrho for of1_10k
 			  }
 			  //split into z and x node
 			  x->rb_tree_next_level = RBTreeCreate(); 
