@@ -70,8 +70,9 @@ int main(int argc, char* argv[]) {
 	
 	//assign mode and classifer
 //    filterFile = "fw1_seed_1_10.rules";
-    filterFile = "of1_1k.txt";
-    packetFile = "of1_1k.trace";
+//    filterFile = "of1_1k.txt";
+//    packetFile = "of1_1k.trace";
+//    outputFile = "output.txt";
 
 	vector<Rule> rules = InputReader::ReadFilterFile(filterFile);
 
