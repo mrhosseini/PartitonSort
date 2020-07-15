@@ -125,7 +125,7 @@ std::vector<int> Simulator::PerformOnlyPacketClassification(PacketClassifier& cl
 	printf("\tConstruction time: %f ms\n", elapsed_milliseconds.count());
 	summary["ConstructionTime(ms)"] = std::to_string(elapsed_milliseconds.count());
 
-	const int trials = 10;
+    const int trials = 1;
 	std::chrono::duration<double> sum_time(0);
 	std::vector<int> results;
 	for (int t = 0; t < trials; t++) {
