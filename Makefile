@@ -10,7 +10,7 @@ UTILPATH = Utilities/
 VPATH = $(OVSPATH) $(MITPATH) $(TRACEPATH) $(IOPATH) $(UTILPATH) $(TREEPATH) $(SPPATH) 
 
 CXX = g++
-CXXFLAGS = -g -std=c++14  -fpermissive -O0 $(INCLUDE)
+CXXFLAGS = -g -std=c++14  -fpermissive -Ofast $(INCLUDE)
 
 # Targets needed to bring the executable up to date
 all: main
